@@ -389,8 +389,11 @@ UTEST_F(YdbTopicWriteSessionFixture, TopicWriteSessionMessagesReadable) {
                 std::visit(
                     utils::Overloaded{
                         [&](NYdb::NTopic::TReadSessionEvent::TDataReceivedEvent& e) {
-                            for (auto& msg : e.GetMessages()) {
+                            for (const auto& msg : e.GetMessages()) {
                                 received.emplace_back(msg.GetData());
+                                if (received.size() >= payloads.size()) {
+                                    return;
+                                }
                             }
                             e.Commit();
                         },
@@ -400,6 +403,9 @@ UTEST_F(YdbTopicWriteSessionFixture, TopicWriteSessionMessagesReadable) {
                     },
                     event
                 );
+                if (received.size() >= payloads.size()) {
+                    break;
+                }
             }
         }
     });
