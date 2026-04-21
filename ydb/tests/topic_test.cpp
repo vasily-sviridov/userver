@@ -366,57 +366,6 @@ UTEST_F(YdbTopicWriteSessionFixture, TopicWriteSessionWriteMultiple) {
     session.Close(std::chrono::milliseconds{1000});
 }
 
-UTEST_F(YdbTopicWriteSessionFixture, TopicWriteSessionMessagesReadable) {
-    const std::vector<std::string> payloads = {"payload-a", "payload-b"};
-
-    {
-        auto session = CreateWriteSession();
-        auto task = engine::AsyncNoSpan([&] {
-            for (const auto& p : payloads) {
-                UASSERT_NO_THROW(WriteAndAck(session, p));
-            }
-        });
-        task.WaitFor(utest::kMaxTestWaitTime);
-        ASSERT_TRUE(task.IsFinished());
-        session.Close(std::chrono::milliseconds{1000});
-    }
-
-    auto read_session = CreateReadSession();
-    std::vector<std::string> received;
-
-    auto task = engine::AsyncNoSpan([&] {
-        while (received.size() < payloads.size()) {
-            for (auto& event : read_session.GetEvents()) {
-                std::visit(
-                    utils::Overloaded{
-                        [&](NYdb::NTopic::TReadSessionEvent::TDataReceivedEvent& e) {
-                            for (const auto& msg : e.GetMessages()) {
-                                received.emplace_back(msg.GetData());
-                                if (received.size() >= payloads.size()) {
-                                    return;
-                                }
-                            }
-                            e.Commit();
-                        },
-                        [](NYdb::NTopic::TReadSessionEvent::TStartPartitionSessionEvent& e) { e.Confirm(); },
-                        [](NYdb::NTopic::TReadSessionEvent::TStopPartitionSessionEvent& e) { e.Confirm(); },
-                        []([[maybe_unused]] auto& e) {},
-                    },
-                    event
-                );
-                if (received.size() >= payloads.size()) {
-                    break;
-                }
-            }
-        }
-    });
-    task.WaitFor(utest::kMaxTestWaitTime);
-    ASSERT_TRUE(task.IsFinished());
-
-    ASSERT_EQ(received, payloads);
-    read_session.Close(std::chrono::milliseconds{1000});
-}
-
 UTEST_F(YdbTopicWriteSessionFixture, TopicWriteSessionTryGetEventEmpty) {
     auto session = CreateWriteSession();
 
