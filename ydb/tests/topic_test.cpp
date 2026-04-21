@@ -96,7 +96,8 @@ protected:
             std::visit(
                 utils::Overloaded{
                     [&](NYdb::NTopic::TWriteSessionEvent::TReadyToAcceptEvent& e) {
-                        session.Write(std::move(e.ContinuationToken), NYdb::NTopic::TWriteMessage{payload});
+                        session
+                            .Write(std::move(e.ContinuationToken), NYdb::NTopic::TWriteMessage{std::string{payload}});
                         written = true;
                     },
                     [&](NYdb::NTopic::TWriteSessionEvent::TAcksEvent& e) {
