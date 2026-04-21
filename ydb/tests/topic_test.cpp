@@ -417,8 +417,10 @@ UTEST_F(YdbTopicWriteSessionFixture, TopicWriteSessionTryGetEventEmpty) {
         // Drain TReadyToAcceptEvent so the session is established
         // and the event queue is empty.
         auto event = session.GetEvent();
+
+        const bool is_ready = std::holds_alternative<NYdb::NTopic::TWriteSessionEvent::TReadyToAcceptEvent>(*event);
         ASSERT_TRUE(event.has_value());
-        ASSERT_TRUE(std::holds_alternative NYdb::NTopic::TWriteSessionEvent::TReadyToAcceptEvent > (*event));
+        ASSERT_TRUE(is_ready);
 
         // Queue is now drained — TryGetEvent must return nullopt immediately.
         EXPECT_FALSE(session.TryGetEvent().has_value());
