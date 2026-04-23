@@ -103,7 +103,7 @@ class UserverConan(ConanFile):
         cmake_layout(self)
 
     def requirements(self):
-        self.requires('boost/[>=1.83 <1.88]', transitive_headers=True)
+        self.requires('boost/[>=1.83 <=1.91]', transitive_headers=True)
         self.requires('c-ares/[^1.33]')
         self.requires('cctz/[^2.4]', transitive_headers=True)
 
